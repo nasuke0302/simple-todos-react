@@ -24,6 +24,7 @@ button {
   box-shadow: 0 3px 3px rgba(34, 25, 25, 0.4);
   padding: 5px;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 button:focus {
@@ -125,4 +126,14 @@ header {
 .task > button {
   justify-self: flex-end;
   background-color: #ff3046;
+}
+
+.filter {
+  display: flex;
+  justify-content: center;
+}
+
+.filter > button {
+  background-color: #62807e;
+  padding: 0.5rem 1.5rem;
 }
