@@ -1,7 +1,7 @@
 import React from "react";
 import { Meteor } from "meteor/meteor";
 import { useTracker } from "meteor/react-meteor-data";
-import { TasksCollection } from "../api/tasksCollection";
+import { TasksCollection } from "../db/tasksCollection";
 import { Task } from "./Task";
 import { TaskForm } from "./TaskForm";
 import { LoginForm } from "./LoginForm";
@@ -15,21 +15,26 @@ export const App = () => {
   const userFilter = user ? { userId: user._id } : {};
   const pendingOnlyFilter = { ...hideCompletedFilter, ...userFilter };
 
-  const tasks = useTracker(() => {
-    if (!user) return [];
+  const { tasks, pendingTasksCount, isLoading } = useTracker(() => {
+    const noDataAvailable = { tasks: [], pendingTasksCount: 0 };
+    if (!Meteor.user()) {
+      return noDataAvailable;
+    }
+    const handler = Meteor.subscribe('tasks');
 
-    return TasksCollection.find(
+    if (!handler.ready()) {
+      return { ...noDataAvailable, isLoading: true };
+    }
+
+    const tasks = TasksCollection.find(
       hideCompleted ? pendingOnlyFilter : userFilter,
       {
         sort: { createdAt: -1 },
       }
     ).fetch();
-  });
+    const pendingTasksCount = TasksCollection.find(pendingOnlyFilter).count();
 
-  const pendingTasksCount = useTracker(() => {
-    if (!user) return 0;
-
-    return TasksCollection.find(pendingOnlyFilter).count();
+    return { tasks, pendingTasksCount };
   });
 
   const pendingTasksTitle = `${
@@ -37,10 +42,12 @@ export const App = () => {
   }`;
 
   const toggleChecked = ({ _id, isChecked }) => {
-    TasksCollection.update({ _id }, { $set: { isChecked: !isChecked } });
+    Meteor.call("tasks.isChecked", _id, !isChecked);
   };
 
-  const deleteTask = ({ _id }) => TasksCollection.remove({ _id });
+  const deleteTask = ({ _id }) => Meteor.call("tasks.remove", _id);
+
+  const logout = () => Meteor.logout();
 
   return (
     <div className="app">
@@ -55,13 +62,18 @@ export const App = () => {
       <div className="main">
         {user ? (
           <>
-            <TaskForm userId={user._id} />
+            <div className="user" onClick={logout}>
+              {user.username} 🚪
+            </div>
+            <TaskForm />
 
             <div className="filter">
               <button onClick={() => setHideCompleted(!hideCompleted)}>
                 {hideCompleted ? "Show All" : "Hide Completed"}
               </button>
             </div>
+
+            {isLoading && <div className="loading">loading...</div>}
 
             <ul className="tasks">
               {tasks.map((task) => (

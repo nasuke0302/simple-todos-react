@@ -1,6 +1,8 @@
 import { Meteor } from "meteor/meteor";
 import { Accounts } from "meteor/accounts-base";
-import { TasksCollection } from "../imports/api/tasksCollection";
+import { TasksCollection } from "../imports/db/tasksCollection";
+import "../imports/db/tasksMethods";
+import "../imports/db/tasksPublications";
 
 const SEED_USERNAME = "meteorite";
 const SEED_PASSWORD = "password";
